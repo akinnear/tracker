@@ -33,7 +33,7 @@ import tspi.model.Target;
 import tspi.model.TargetModel;
 
 /** A controller for manipulating a set of pedestals and their targets. Meant 
- * to demonstrate the deliverables of Increment 1 of the Predictive TSPI 
+ * to demonstrate the deliverables of Increment 3 of the Predictive TSPI 
  * project. */
 @SuppressWarnings("serial")
 public class Increment3 extends JFrame 
@@ -59,7 +59,7 @@ implements ActionListener, ListSelectionListener, TableModelListener {
 	
 	
 	public static void main(String args[]) {
-		Increment2 frame = new Increment2();
+		Increment3 frame = new Increment3();
 		if(args.length==2) {
 			
 			// try to load a default pedestal file using the first argument as a path
@@ -181,7 +181,7 @@ implements ActionListener, ListSelectionListener, TableModelListener {
 		this.setLayout( new BorderLayout() );
 		this.add(bar, BorderLayout.NORTH);
 		this.add(split, BorderLayout.CENTER);
-		this.setTitle("TSPI Predictor; Increment 1 & 2");
+		this.setTitle("TSPI Predictor; Increment 3");
 		this.setBounds(100, 100, 1000, 400);
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 	}
@@ -197,7 +197,7 @@ implements ActionListener, ListSelectionListener, TableModelListener {
 			pedestal.pointToLocation( geo );
 	}
 	
-	/** Increment 1, usecase 2: Updates the error of all targets using the two pedestals. */
+	/** Increment 1, usecase 2: Updates the error of all targets using the selected pedestals. */
 	public void ComputeError(ArrayList<Pedestal> selected, TargetModel targets) {
 		// for each target
 		for(Target target : targets) {
@@ -379,7 +379,7 @@ implements ActionListener, ListSelectionListener, TableModelListener {
 				this.targets.setCoordinateSystem(TargetModel.GEOCENTRIC);
 			} else if( event.getSource()==this.about) {
 				JOptionPane.showMessageDialog(this, 
-						"TSPI Predictor Increment 1 & 2\n"
+						"TSPI Predictor Increment 3\n"
 						+ "Mike Shields : Quaternion Library, Regresion Design\n"
 						+ "CaseyShields : UI\n\n"
 						+ "Case 1 : Compute pedestals' reference azimuth, elevation and range from target location\n"

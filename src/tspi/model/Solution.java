@@ -23,43 +23,45 @@ public class Solution {
 	
 	public Solution(Vector3 origin, List<Pedestal> pedestals) {		
 		
-		
-		//count pedestal sensors active in fuzed solution
-		int pedSensorCnt =0;
-		for(Pedestal pedestal : pedestals) {
-			// begin with case (by 2) for az,el of pedestal... need not always be 2...
-			pedSensorCnt += 2;
-			Ellipsoid ellipsoid = pedestal.getLocationEllipsoid(); //.getWGS84().getEllipsoid();
-			//Debug
-			System.out.println( "Pedestal "+pedestal.getSystemId()+" : "
-//					+ "EFG=" + pedestal.getGeocentricCoordinates().toString(5)
-					+ " lon="+ellipsoid.getEastLongitude().signedPrinciple().toDegreesString(DIGITS)
-					+ " lat="+ellipsoid.getNorthLatitude().toDegreesString(DIGITS)
-					+ " h="+ellipsoid.getEllipsoidHeight()
-					+ " az=" + pedestal._local.getAzimuth().toDegreesString(7)
-					+ " el=" + pedestal._local.getElevation().toDegreesString(7));
-		}	
+		int cntPed = pedestals.size();
+		// begin with case (by 2) for az,el of pedestal... need not always be 2...
+		int pedSensorCnt = 2*cntPed;		
+//		//review pedestal sensors active in fuzed solution
+//		for(Pedestal pedestal : pedestals) {
+//
+//			Ellipsoid ellipsoid = pedestal.getLocationEllipsoid(); //.getWGS84().getEllipsoid();
+//			//Debug
+//			System.out.println( "Pedestal "+pedestal.getSystemId()+" : "
+////					+ "EFG=" + pedestal.getGeocentricCoordinates().toString(5)
+//					+ " lon="+ellipsoid.getEastLongitude().signedPrinciple().toDegreesString(DIGITS)
+//					+ " lat="+ellipsoid.getNorthLatitude().toDegreesString(DIGITS)
+//					+ " h="+ellipsoid.getEllipsoidHeight()
+//					+ " az=" + pedestal._local.getAzimuth().toDegreesString(7)
+//					+ " el=" + pedestal._local.getElevation().toDegreesString(7));
+//		}	
 		
 		
 		Vector3 row = new Vector3(Double.NaN,Double.NaN,Double.NaN);
 		double [] rhs = new double [pedSensorCnt];
 		double [][] matrixData = new double [pedSensorCnt][3];
+
 		int i = 0; 
 		for(Pedestal pedestal : pedestals) {	
 			System.out.println("Pedestal "+pedestal.getSystemId()+": q_NG="+pedestal._localFrame.getLocal().toString(5)+"  q_AG = "+pedestal._apertureFrame._orientation.toString(5));
+			Vector3 localOrigin = new Vector3(pedestal._location).subtract(origin);
 			//Assuming two axial sensors per pedestal...			
 			row = pedestal._apertureFrame._orientation.getImage_k();//axial AZ dircos
 			matrixData[i][0] = row.getX();
 			matrixData[i][1]= row.getY();
 			matrixData[i][2] = row.getZ();			
-			rhs[i] = new Vector3(pedestal._location).subtract(origin).getInnerProduct(row);			
+			rhs[i] = localOrigin.getInnerProduct(row);			
 			i+=1;
 			
 			row = pedestal._apertureFrame._orientation.getImage_j();//axial EL dircos
 			matrixData[i][0] = row.getX();
 			matrixData[i][1]= row.getY();
 			matrixData[i][2] = row.getZ();			
-			rhs[i] = new Vector3(pedestal._location).subtract(origin).getInnerProduct(row);
+			rhs[i] = localOrigin.getInnerProduct(row);
 			i+=1;	
 			
 		}
@@ -68,10 +70,18 @@ public class Solution {
 		RealMatrix a = new Array2DRowRealMatrix(matrixData);
 	System.out.println("Sensors in solution: "+a.getRowDimension());
 	System.out.println(a.getColumnDimension()); // 3
-		SingularValueDecomposition svd = new SingularValueDecomposition(a);
+		
+	    SingularValueDecomposition svd = new SingularValueDecomposition(a);
 		RealVector b = new ArrayRealVector(rhs);
-		RealVector y = svd.getSolver().solve(b);		
+		RealVector y = svd.getSolver().solve(b);	
+		
+		RealMatrix sigma = svd.getS();
+		RealMatrix v = svd.getV();
+		RealMatrix u = svd.getU();
+		double[] sing = svd.getSingularValues();
 
+		
+		
 		OLSMultipleLinearRegression fit = new OLSMultipleLinearRegression();
 		fit.newSampleData(rhs, matrixData);
 		fit.setNoIntercept(true);
@@ -82,6 +92,7 @@ public class Solution {
 		double mse = fit.estimateErrorVariance();
 		double[] parmSTD = fit.estimateRegressionParametersStandardErrors();
 		
+
 		
 		//angles only solution
 		this.position_EFG = new Vector3(y.getEntry(0), y.getEntry(1), y.getEntry(2)).add(origin);
